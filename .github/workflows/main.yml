@@ -1,0 +1,54 @@
+name: Run Heavy stuff
+on:
+  workflow_dispatch:
+jobs:
+  Work-time:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout private tools
+        uses: actions/checkout@v4
+        with:
+          repository: john4650-hub/Hello-Android-CI
+          token: ${{ secrets.TK }}
+      - name: install ffmpeg
+        uses: animMouse/setup-ffmpeg@v1
+
+      - name: Cache pip dependencies
+        uses: actions/cache@v4
+        with:
+          path: ./.venv/
+          key: ${{ runner.os }}-2-pip-${{ hashFiles('**/requirements.txt') }}
+          restore-keys: |
+            ${{ runner.os }}-2-pip-
+
+      - name: Running heavy process Here
+        run: |
+          chmod +x run_command.sh
+          ./run_command.sh 0.${{ github.run_number }}.0 $GITHUB_TOKEN #>>log.txt 2>&1 || true
+        env:
+          GITHUB_TOKEN: ${{ secrets.TK }}
+        shell: bash
+
+      - name: commit logs
+        run: |
+          mkdir log
+          cd log
+          gh repo clone John4650-hub/Pastebin
+          mv ../log.txt Pastebin
+          cd Pastebin
+          git config --global user.name "$GIT_USERNAME"
+          git config --global user.email "$GIT_AUTHOR_EMAIL"
+          git add .
+          git commit -m "logs from building react aoo"
+        env:
+          GITHUB_TOKEN: ${{ secrets.TK }}
+          GIT_AUTHOR_EMAIL: johndelvin51@gmail.com
+          GIT_USERNAME: john4650-hub
+
+      - name: Push changes
+        uses: ad-m/github-push-action@master
+        with:
+          github_token: ${{ secrets.TK }}
+          repository: john4650-hub/Pastebin
+          directory: log/Pastebin
+
